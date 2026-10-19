@@ -1,0 +1,31 @@
+# Zephyr / CMake build output
+build/
+build_*/
+*.o
+*.obj
+host_test
+host_test.exe
+bench
+bench.exe
+va.raw
+*.raw
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Generated intermediates (regenerate with src/*.py; see docs/DATA.md)
+out/*
+!out/data.npz
+out/gate_result.json
+out/lowlight/
+out/data_paths.json
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

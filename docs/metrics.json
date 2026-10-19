@@ -1,0 +1,252 @@
+{
+  "primary_model": {
+    "architecture": "4-block int8 CNN, stride-2 first conv",
+    "params": 62145,
+    "tflite_float32_bytes": 251456,
+    "tflite_int8_bytes": 72408,
+    "weights_in_flash_bytes": 63740,
+    "peak_inference_ram_bytes": 9984,
+    "macs_per_inference": 6885440,
+    "accuracy_qemu": {
+      "rgb48": 0.9973,
+      "rgb64": 0.9973,
+      "gray48": 0.9945
+    },
+    "inference_ms": {
+      "qemu_guest_measured_median": 33.77,
+      "qemu_guest_measured_median_original": 55.26,
+      "native_x86_O3": 1.52,
+      "native_x86_O3_original": 3.41,
+      "method": "k_cycle_get_32 around the inference call, cross-checked against a wall-clock A/B of both builds; the host script's line-gap method is unreliable once inference is fast"
+    },
+    "verification": {
+      "argmax_agreement_vs_tflite_reference": "364/364",
+      "identical_score_vectors": "362/364",
+      "max_logit_deviation_lsb": 1,
+      "images_with_any_deviation": [
+        262,
+        285
+      ],
+      "predictions_changed_by_quantisation": 0,
+      "float32_tflite_accuracy": 0.9973,
+      "int8_tflite_accuracy": 0.9973,
+      "c_runtime_accuracy": 0.9973,
+      "reference_kernels": "OpResolverType.BUILTIN_REF (XNNPACK does not reproduce reference int8 arithmetic)"
+    },
+    "variant": "domain-hardened + low-light hardened (3 synthetic photographic views per pictogram image; sensor-model night augmentation on 22 % of samples)"
+  },
+  "errors": {
+    "total": 1,
+    "index": 281,
+    "true_class": 84,
+    "predicted_class": 83,
+    "confidence_pct": 82.97,
+    "pairs": "class 83 <-> 84 (steep descent / steep ascent), the mirror pair",
+    "classes_with_zero_errors": 16,
+    "identical_on": [
+      "native x86",
+      "qemu_x86",
+      "ESP32 hardware"
+    ]
+  },
+  "ablations": {
+    "stride1_conv_plus_pool": 0.9808,
+    "stride2_first_conv": 0.9835,
+    "width_1.5x": 0.9863,
+    "grayscale_aug_off": {
+      "rgb": 0.9835,
+      "gray": 0.7418
+    },
+    "grayscale_aug_on": {
+      "rgb": 0.9945,
+      "gray": 0.9918
+    }
+  },
+  "toolchain": {
+    "zephyr": "v4.4.0",
+    "boards": [
+      "qemu_x86",
+      "esp32s3_devkitc/esp32s3/procpu"
+    ],
+    "uart": "115200 8N1"
+  },
+  "protocol": {
+    "baud": 115200,
+    "framing": "8N1",
+    "sequence": [
+      "READY",
+      "<hex payload>",
+      "STOP",
+      "RECEIVED <n> bytes",
+      "PREDICTION class=<official_id> label=<name> confidence=<p>%",
+      "READY"
+    ],
+    "payload_bytes_confirmed": 6912,
+    "also_accepted": [
+      12288,
+      2304
+    ],
+    "ready_rearm_seconds": 3
+  },
+  "confidence": {
+    "meaning": "organisers confirmed the reported confidence IS the accuracy criterion",
+    "format": "percentage with two decimals, e.g. 99.87%",
+    "method": "softmax over dequantised int8 logits, output side only",
+    "capped": false,
+    "mean_pct": 98.6,
+    "mean_when_correct_pct": 98.64,
+    "accuracy_above_60pct_confidence": 0.9972,
+    "images_retained_above_60pct": "359/364",
+    "temperature_scaling": {
+      "adopted": false,
+      "optimal_T": 0.472,
+      "mean_confidence_pct_before": 98.6,
+      "mean_confidence_pct_after": 99.4,
+      "ece_pp_before": 1.12,
+      "ece_pp_after": 0.63,
+      "confidence_on_error_before_pct": 82.97,
+      "confidence_on_error_after_pct": 96.6,
+      "reason": "erases the separation between the wrong prediction and the correct ones, and would be fitted on the same 364 images used for checkpoint selection"
+    },
+    "accuracy_above_90pct_confidence": 1.0,
+    "images_retained_above_90pct": "347/364",
+    "expected_calibration_error_pp": 1.12,
+    "confidence_on_the_single_error_pct": 82.97,
+    "min_pct": 50.72
+  },
+  "back_to_back_verification": {
+    "single_connection_40_images": {
+      "correct": "40/40",
+      "sequence_ok": "RECEIVED -> PREDICTION -> READY, 40/40"
+    },
+    "no_handshake_blast_12_images": {
+      "correct": "12/12",
+      "bytes_lost": 0
+    }
+  },
+  "training": {
+    "epochs": 220,
+    "final_train_accuracy": 0.9884,
+    "final_validation_accuracy": 0.9918,
+    "note": "validation exceeds training because augmentation is applied to the training stream only"
+  },
+  "kernel_optimisation": {
+    "peak_ram_before": 27648,
+    "peak_ram_after": 9984,
+    "ram_reduction_pct": 44,
+    "speedup_qemu": 1.64,
+    "speedup_native_O3": 2.24,
+    "changes": [
+      "convolution fused with the following 2x2 max pool - the wide intermediate tensor is never materialised",
+      "uint8 activation representation removes the zero-point subtraction from the inner loop",
+      "four output channels accumulated per pass",
+      "tsr_model.c compiled -O3; Zephyr defaults to -Os"
+    ],
+    "cost_bytes_irom": 2688,
+    "accuracy_change": 0.0,
+    "bit_exactness_after": "364/364"
+  },
+  "domain_robustness": {
+    "stress_set": "src/stress_set.py - pictogram classes composited onto photographic backgrounds with perspective, blur, JPEG and lighting variation",
+    "in_distribution_model": {
+      "validation": 0.9945,
+      "stress_overall": 0.8242,
+      "stress_photo": 0.973,
+      "stress_pictogram": 0.5915
+    },
+    "domain_hardened_model": {
+      "validation": 0.989,
+      "stress_overall": 0.9808,
+      "stress_photo": 0.991,
+      "stress_pictogram": 0.9648
+    },
+    "break_even_probability_of_shift": 0.036,
+    "shipped": "domain-hardened",
+    "all_validation_errors": "class 83 <-> 84, the mirror pair"
+  },
+  "low_light": {
+    "generator": "src/lowlight_set.py - alpha blend with black, and a physically based sensor model at matched brightness",
+    "before": {
+      "d0.70": 0.9725,
+      "d0.85": 0.9176,
+      "d0.95": 0.2363
+    },
+    "after": {
+      "d0.70": 0.9918,
+      "d0.85": 0.9698,
+      "d0.95": 0.6209
+    },
+    "note": "blend-to-black overstates robustness because it omits shot noise; the two agree until noise dominates, then diverge"
+  },
+  "model_selection": {
+    "in_distribution": {
+      "validation": 0.9945,
+      "stress": 0.8242
+    },
+    "domain_only": {
+      "validation": 0.989,
+      "stress": 0.9808,
+      "night_0.85": 0.9176
+    },
+    "shipped_domain_plus_night": {
+      "validation": 0.9973,
+      "stress": 0.967,
+      "night_0.85": 0.9698
+    },
+    "rationale": "validation is the only genuinely held-out set; the stress and night sets are our own constructions. The shipped model wins on the real holdout and dominates the in-distribution model everywhere."
+  },
+  "optimisation": {
+    "arena_bytes": {
+      "unfused": 27648,
+      "conv_pool_fusion": 15360,
+      "conv_conv_pool_fusion": 9984,
+      "note": "triple fusion verified byte-identical on all 364x17 int8 logits against the pair-fused schedule"
+    }
+  },
+  "esp32s3": {
+    "source": "Zephyr memory report from a build of this exact tree, 31 Aug 2026; never flashed",
+    "board": "esp32s3_devkitc/esp32s3/procpu (DevKitC-1 N16R8, 16 MB flash)",
+    "flash_bytes": 199700,
+    "flash_capacity": 16776960,
+    "iram0_0_seg_bytes": 37828,
+    "iram0_0_seg_capacity": 415492,
+    "dram0_0_seg_bytes": 69808,
+    "dram0_0_seg_capacity": 399108,
+    "irom0_0_seg_bytes": 21472,
+    "drom0_0_seg_bytes": 134164,
+    "arena_symbols_bytes": {
+      "tsr_buf_a": 4608,
+      "tsr_buf_b": 2304,
+      "tsr_scratch": 3072,
+      "total": 9984
+    },
+    "app_flash_offset": "0x0",
+    "app_source": "src/esp32_app (byte-identical to src/qemu_app)"
+  },
+  "hardware": {
+    "part": "ESP32-D0WD-V3 (Xtensa LX6), 4 MB flash, CH340 USB-serial, 115200 8N1",
+    "status": "bench proxy - the submitted target is ESP32-S3, built and linked but never flashed",
+    "flash_offset": "0x1000 (ESP32); the S3 image goes at 0x0",
+    "accuracy": 0.9973,
+    "correct": 363,
+    "total": 364,
+    "single_error": {
+      "index": 281,
+      "expected_class": 84,
+      "predicted_class": 83,
+      "confidence_pct": 82.97,
+      "note": "identical index and misclassification as native x86 and QEMU"
+    },
+    "confidence_mean_pct": 98.6,
+    "confidence_min_pct": 50.72,
+    "seconds_per_image": 1.72,
+    "link_errors": "zero re-sends across the 364-image sweep. One frame was rejected during bring-up (ERROR odd number of hex digits) while a terminal emulator still held the port; one event, not a measured rate"
+  },
+  "_note": "Figures re-verified 2026-09-02 against model/quantized_model_int8.tflite and the C runtime in src/qemu_app/src/. Scripts that reproduce each block are named in docs/RESULTS.md.",
+  "runtime": {
+    "file": "src/qemu_app/src/tsr_model.c",
+    "total_lines": 493,
+    "code_lines": 337,
+    "dependencies": "none beyond <stdint.h> and <string.h>; no heap, no framework, no operator registry"
+  }
+}

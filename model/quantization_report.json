@@ -1,0 +1,10 @@
+{
+  "float32_bytes": 251456,
+  "int8_bytes": 72408,
+  "compression": 3.47,
+  "val_acc_float32": 1.0,
+  "val_acc_int8": 0.9972527472527473,
+  "acc_drop_pp": 0.27,
+  "input_scale": 1.0,
+  "input_zero_point": -128
+}

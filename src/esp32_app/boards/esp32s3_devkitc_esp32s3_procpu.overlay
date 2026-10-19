@@ -1,0 +1,15 @@
+/*
+ * ESP32-S3-DevKitC-1 N16R8 (ESP32-S3-WROOM-1, 16 MB flash, 8 MB octal PSRAM).
+ *
+ * The in-tree board defines flash0 as 8 MB, and esptool takes the flash size
+ * for the image header from that devicetree node - not from
+ * CONFIG_ESPTOOLPY_FLASHSIZE. The header value configures the SPI flash size
+ * register at boot, so on a 16 MB module it should say 16 MB.
+ *
+ * Only the size changes. The partition layout in partitions_0x0_amp.dtsi is
+ * untouched and lives entirely inside the first 8 MB; this application
+ * occupies about 200 KB of it.
+ */
+&flash0 {
+	reg = <0x0 0x1000000>;   /* 16 MB */
+};

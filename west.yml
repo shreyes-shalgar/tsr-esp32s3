@@ -1,0 +1,35 @@
+# west manifest for building the firmware in this repository.
+#
+# Zephyr itself is NOT vendored here - it is ~1 GB of source with its own
+# licensing and release cadence, and pinning it by revision is both smaller
+# and more honest than copying a snapshot in. This manifest imports the
+# official Zephyr manifest at the tag the firmware was built and flashed
+# with, and narrows `west update` to the modules these two boards actually
+# need, so the workspace lands around 1 GB instead of 7 GB.
+#
+#   west init -l .          (run from the repository root)
+#   west update
+#   west zephyr-export
+#
+# Then build as described in docs/BUILD.md.
+
+manifest:
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+
+  projects:
+    - name: zephyr
+      remote: upstream
+      revision: v4.4.0
+      import:
+        # Everything needed for qemu_x86 and esp32s3_devkitc, and nothing else.
+        # Drop this allowlist (and the whole `import:` block's contents) to
+        # fetch the full Zephyr module set.
+        name-allowlist:
+          - cmsis            # required by the Zephyr build system
+          - hal_espressif    # ESP32-S3 SoC support and esptool
+          - hal_xtensa       # Xtensa core support
+          - picolibc         # default C library
+          - segger           # pulled in by the espressif HAL's build files
+          - mbedtls

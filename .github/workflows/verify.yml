@@ -1,0 +1,42 @@
+name: verify
+
+# The numerical claims in docs/RESULTS.md are the point of this repository,
+# so they are re-checked on every push. This job needs neither QEMU nor the
+# Zephyr SDK: it builds the C runtime natively and compares it, logit for
+# logit, against TFLite's reference int8 kernels.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bit-exactness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the reference interpreter
+        run: pip install numpy ai-edge-litert
+
+      - name: Build the native harness
+        run: |
+          gcc -O2 -std=gnu99 -o host_test test/host_test.c \
+              src/qemu_app/src/tsr_model.c src/qemu_app/src/tsr_model_data.c -lm
+
+      - name: Run it over the validation set
+        run: |
+          python -c "import numpy as np; open('va.raw','wb').write(np.load('out/data.npz')['Xva'].tobytes())"
+          ./host_test va.raw > host_out.txt
+
+      - name: Compare against TFLite reference kernels
+        run: python scripts/ci_bit_exact.py
+
+      - name: The two applications must share identical sources
+        run: |
+          diff -r src/qemu_app/src src/esp32_app/src
